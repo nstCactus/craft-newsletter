@@ -5,6 +5,7 @@ namespace juban\newsletter\models;
 use Craft;
 use craft\base\Model;
 use juban\newsletter\Newsletter;
+use juban\newsletter\events\SubscribeEvent;
 
 /**
  * NewsletterForm class
@@ -18,6 +19,8 @@ class NewsletterForm extends Model
     public $consent;
 
     public $additionalFields;
+
+    public const EVENT_BEFORE_SUBSCRIBE = 'beforeSubscribe';
 
     public function rules(): array
     {
@@ -34,6 +37,14 @@ class NewsletterForm extends Model
     {
         if (!$this->validate()) {
             return false;
+        }
+
+        $event = new SubscribeEvent();
+        $this->trigger(self::EVENT_BEFORE_SUBSCRIBE, $event);
+
+        if ($event->isSpam) {
+            Craft::info("Spam submission detected ($this->email). Pretending subscription was successful without actually subscribing.", __METHOD__);
+            return true;
         }
 
         // Use newsletter module to register new user

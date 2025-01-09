@@ -132,16 +132,16 @@ You can use the following template as a starting point for your registration for
             <p>{{ 'Your newsletter subscription has been taken into account. Thank you.'|t }}</p>
         </div>
     {% endif %}
-    
+
     <form action="" method="post" accept-charset="UTF-8">
         {{ csrfInput() }}
-        
+
         {# Subscription process is handled by the newsletter plugin controller #}
         {{ actionInput('newsletter/newsletter/subscribe') }}
-        
+
         {# User will be redirected to the redirect input url upon successful subscription #}
         {{ redirectInput('thank-you') }}
-        
+
         <label for="newsletter-consent">
         	<input type="checkbox" value="check" name="consent" id="newsletter-consent" required {% if newsletterForm.hasErrors('consent') %}aria-invalid="true" aria-describedby="consent-error"{% endif %}>
             {{'I agree to receive your emails and confirm that I have read your privacy policy.'|t}}
@@ -149,7 +149,7 @@ You can use the following template as a starting point for your registration for
         {% if newsletterForm.hasErrors('consent') %}
             <div id="consent-error" role="alert" class="text-sm text-error font-bold">{{ newsletterForm.getFirstError('consent') }}</div>
         {% endif %}
-        
+
         <label for="newsletter-email">{{ 'Votre email'|t }}<span aria-hidden="true">*</span></label>
         <input id="newsletter-email" required name="email" type="email" placeholder="j.dupont@gmail.com" value="{{ newsletterForm.email }}" {% if newsletterForm.hasErrors('email') %}aria-invalid="true" aria-describedby="email-error"{% endif %}>
 
@@ -162,11 +162,11 @@ You can use the following template as a starting point for your registration for
         <label for="newsletter-lastname">{{ 'Lastname'|t }}</label>
         <input id="newsletter-lastname" name="additionalFields[lastname]" type="text"
            value="{{ newsletterForm.additionalFields.lastname ?? '' }}">
-           
+
         {% if newsletterForm.hasErrors('email') %}
             <div id="email-error" role="alert" class="text-sm text-error font-bold">{{ newsletterForm.getFirstError('email') }}</div>
         {% endif %}
-        
+
         <button type="submit">{{ 'Subscribe'|t }}</button>
 
     </form>
@@ -187,10 +187,10 @@ For example, to provide a `firstname` field, input should be named `additionalFi
 
 ## XHR / AJAX form
 
-Alternatively, you can submit the newsletter form with Javascript.   
+Alternatively, you can submit the newsletter form with Javascript.
 This gives you more freedom to provide visual effects to the user and prevents the page from reloading and scrolling to
-the top of the page.  
-The downside is that you need to write the ajax-request.  
+the top of the page.
+The downside is that you need to write the ajax-request.
 Use the example below as a reference, note the required `application/json` header:
 
 ```javascript
@@ -215,6 +215,30 @@ xhr.send(data);
 > ⚠️ If the Google reCAPTCHA verification is enabled, add the `data.append("g-recaptcha-response", "");` to the request
 > as well!
 
+## Events
+
+### `NewsletterForm::EVENT_BEFORE_SUBSCRIBE`
+
+This event is triggered after validating the NewsletterForm model but before actually subscribing. You can cancel the
+subscription by setting its `isSpam` property to `true`. When this happens, the response sent to the client indicates
+that the subscription was successful but actually nothing was sent to the adapters. This filters out spambots without
+letting them know they were filtered.
+
+Example:
+
+```php
+Event::on(
+    NewsletterForm::class,
+    NewsletterForm::EVENT_BEFORE_SUBSCRIBE,
+    function (SubscribeEvent $event) {
+	    $isSpam = // custom spam detection logic...
+        if ($isSpam) {
+            $event->isSpam = true;
+        }
+    }
+);
+```
+
 ## Custom validations
 
 You can provide your own validations on frontend form submission in a project module or a plugin using
@@ -228,7 +252,7 @@ Event::on(
 	NewsletterForm::class,
 	NewsletterForm::EVENT_AFTER_VALIDATE,
 	static function (Event $event) {
-	    $form = $event->sender;	    
+	    $form = $event->sender;
 	    $isSpam = // custom spam detection logic...
 	    if($isSpam) {
 	    	$this->addError('email', 'Spam detected!');
@@ -257,7 +281,7 @@ class MySuperNewsletterAdapter extends BaseNewsletterAdapter
     public $apiKey;
     // Store any error occurring in the subscribe method here
     private $_errorMessage;
-    
+
     /**
      * @inheritdoc
      */
@@ -293,7 +317,7 @@ class MySuperNewsletterAdapter extends BaseNewsletterAdapter
             'adapter' => $this
         ]);
 	    }
-	
+
 	/**
 	 * Try to subscribe the given email into the newsletter mailing list service
 	 * @param string $email
