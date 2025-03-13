@@ -1,0 +1,30 @@
+{% requireAdmin %}
+
+{% extends "settings/plugins/_settings" %}
+
+{% if configPath %}
+    {% set errorSummary %}
+        <div class="readable">
+            <blockquote class="note warning">
+                <p>
+                    {{ 'It looks like these settings are being overridden by {paths}.'|t('app', {
+                        paths: configPath
+                    }) }}
+                </p>
+            </blockquote>
+        </div>
+        <br>
+    {% endset %}
+{% endif %}
+
+{% block content %}
+    {{ actionInput('plugins/save-plugin-settings') }}
+    {{ hiddenInput('pluginHandle', plugin.handle) }}
+    {{ redirectInput('settings') }}
+
+    {% for site in sites %}
+        <div id="{{ site.handle }}" {% if not loop.first %}class="hidden"{% endif %}>
+            {% include 'newsletter/site-settings.twig' %}
+        </div>
+    {% endfor %}
+{% endblock %}

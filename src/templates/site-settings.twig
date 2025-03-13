@@ -15,35 +15,31 @@
 
 {% import "_includes/forms" as forms %}
 
-{% if configPath %}
-    <div class="readable">
-        <blockquote class="note warning">
-            <p>
-                {{ 'It looks like these settings are being overridden by {paths}.'|t('app', {
-                    paths: configPath
-                }) }}
-            </p>
-        </blockquote>
-    </div>
-    <hr>
-{% endif %}
+{% set adapter = craft.newsletter.getNewsletterAdapterForSite(site.handle) %}
+{% do adapter.validate() %}
+{% set currentAdapterClassName = className(adapter) %}
+{% set namespace = "settings[localizedSettings][#{site.handle}]" %}
+{% set settings = settings.getSiteSettings(site.handle) %}
 
 {{ forms.selectField({
     label: "Service type"|t('newsletter'),
     instructions: "Which service should be use to handle newsletter users subscription?"|t('newsletter'),
     first: true,
-    id: 'adapterType',
-    name: 'adapterType',
+    id: "adapterType"|namespaceInputId(namespace),
+    name: "adapterType"|namespaceInputName(namespace),
     options: adapterTypeOptions,
-    value: className(adapter),
+    value: currentAdapterClassName,
     errors: adapter.getErrors('type') ?? null,
-    toggle: true
+    toggle: true,
+    targetPrefix: "##{namespace|id}-",
 }) }}
 
 {% for _adapter in allAdapters %}
-    {% set isCurrent = (className(_adapter) == className(adapter)) %}
-    <div id="{{ className(_adapter)|id }}"{% if not isCurrent %} class="hidden"{% endif %}>
-        {% namespace 'adapterSettings['~className(_adapter)~']' %}
+    {% set adapterClassName = className(_adapter) %}
+    {% set isCurrent = (adapterClassName == currentAdapterClassName) %}
+
+    <div id="{{ adapterClassName|id|namespaceInputId(namespace) }}"{% if not isCurrent %} class="hidden"{% endif %}>
+        {% namespace "#{namespace}[#{adapterClassName}]" %}
             {{ (isCurrent ? adapter : _adapter).getSettingsHtml()|raw }}
         {% endnamespace %}
     </div>
@@ -53,7 +49,7 @@
     {{ forms.booleanMenuField({
         label: "Enable Google reCAPTCHA"|t("newsletter"),
         instructions: "If enabled, newsletter subscription form will be verified using Google reCAPTCHA plugin."|t('newsletter'),
-        name: "recaptchaEnabled",
+        name: "recaptchaEnabled"|namespaceInputName(namespace),
         includeEnvVars: true,
         value: settings.recaptchaEnabled,
         errors: settings.errors("recaptchaEnabled")

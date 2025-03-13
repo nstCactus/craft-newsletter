@@ -3,22 +3,28 @@
 namespace juban\newsletter;
 
 use Craft;
+use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\App;
 use craft\helpers\ArrayHelper;
-use craft\helpers\Component;
 use craft\helpers\UrlHelper;
 use craft\services\Plugins;
+use craft\web\Controller;
+use craft\web\twig\variables\CraftVariable;
 use juban\googlerecaptcha\GoogleRecaptcha;
 use juban\newsletter\adapters\Brevo;
 use juban\newsletter\adapters\Mailchimp;
 use juban\newsletter\adapters\Mailjet;
 use juban\newsletter\adapters\NewsletterAdapterInterface;
+use juban\newsletter\models\LocalizedSettingsCollection;
 use juban\newsletter\models\NewsletterForm;
 use juban\newsletter\models\Settings;
+use juban\newsletter\services\NewsletterAdapterService;
+use juban\newsletter\variables\Newsletter as NewsletterVariable;
 use yii\base\Event;
+use yii\web\Response;
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -31,13 +37,14 @@ use yii\base\Event;
  * https://docs.craftcms.com/v3/extend/
  *
  * @property NewsletterAdapterInterface $adapter
+ * @property NewsletterAdapterService $newsletterAdapterService
  *
  * @author    juban
  * @package   Newsletter
  * @since     1.0.0
  *
- * @property  Settings $settings
- * @method    Settings getSettings()
+ * @property  LocalizedSettingsCollection $settings
+ * @method    LocalizedSettingsCollection getSettings()
  */
 class Newsletter extends Plugin
 {
@@ -91,21 +98,14 @@ class Newsletter extends Plugin
 
         $this->_registerAfterInstallEvent();
         $this->_registerRecaptchaVerification();
+        $this->_registerVariables();
 
+        $this->set('newsletterAdapterService', NewsletterAdapterService::class);
         // Register adapter component
+        // TODO: rename to currentSiteNewsletterAdapter
         $this->set('adapter', function() {
-            $adapterTypes = self::getAdaptersTypes();
-            // Backward compatibility with legacy adapters
-            if (str_starts_with($this->settings->adapterType, "simplonprod")) {
-                $this->settings->adapterType = str_replace('simplonprod', 'juban', $this->settings->adapterType);
-            }
-
-            if ($this->settings->adapterType === null) {
-                $this->settings->adapterType = $adapterTypes[0];
-                $this->settings->adapterTypeSettings = [];
-            }
-
-            return self::createAdapter($this->settings->adapterType, $this->settings->adapterTypeSettings);
+            $currentSite = Craft::$app->getSites()->getCurrentSite();
+            return $this->getNewsletterAdapterForSite($currentSite->handle);
         });
 
         Craft::info(
@@ -149,7 +149,9 @@ class Newsletter extends Plugin
      */
     private function _registerRecaptchaVerification(): void
     {
-        if (App::parseBooleanEnv(Newsletter::$plugin->settings->recaptchaEnabled) !== true) {
+        $settings = $this->getCurrentSiteSettings();
+
+        if (App::parseBooleanEnv($settings->recaptchaEnabled) !== true) {
             return;
         }
 
@@ -172,6 +174,7 @@ class Newsletter extends Plugin
     /**
      * Return the list of available newsletter adapters
      * @return string[]
+     * FIXME: Move this method to the NewsletterAdapterService
      */
     public static function getAdaptersTypes(): array
     {
@@ -189,80 +192,51 @@ class Newsletter extends Plugin
         return $event->types;
     }
 
-    // Protected Methods
-    // =========================================================================
-    /**
-     * @param array|null $settings
-     * @return \craft\base\ComponentInterface
-     * @throws \craft\errors\MissingComponentException
-     * @throws \yii\base\InvalidConfigException
-     */
-    public static function createAdapter(string $type, array $settings = null): \craft\base\ComponentInterface
-    {
-        return Component::createComponent([
-            'type' => $type,
-            'settings' => $settings,
-        ], NewsletterAdapterInterface::class);
-    }
-
     public function beforeSaveSettings(): bool
     {
-        if (Craft::$app->request->isPost) {
-            $postSettings = Craft::$app->request->post('settings');
-            if (isset($postSettings['adapterType'])) {
-                $adapterSettings = $postSettings['adapterSettings'][$postSettings['adapterType']] ?? [];
-                $adapter = self::createAdapter($postSettings['adapterType'], $adapterSettings);
-                if (!$adapter->validate()) {
-                    return false;
-                }
+        $settings = $this->getSettings();
 
-                $this->settings->adapterTypeSettings = $adapter->getAttributes();
+        // Convert SiteSettings objects into arrays before saving
+        $convertedSites = [];
+        foreach ($settings->localizedSettings as $siteHandle => $siteSettings) {
+            if ($siteSettings instanceof Settings) {
+                $convertedSites[$siteHandle] = $siteSettings->toArray();
             } else {
-                return false;
+                $convertedSites[$siteHandle] = $siteSettings;
             }
         }
 
-        return true;
+        // Update the settings model with the converted site settings
+        $settings->localizedSettings = $convertedSites;
+
+        return parent::beforeSaveSettings();
     }
 
-    /**
-     * Creates and returns the model used to store the plugin’s settings.
-     *
-     * @return Settings|null
-     */
-    protected function createSettingsModel(): ?\craft\base\Model
+    protected function createSettingsModel(): ?Model
     {
-        return new Settings();
+        return new LocalizedSettingsCollection();
     }
 
-    /**
-     * Returns the rendered settings HTML, which will be inserted into the content
-     * block on the settings page.
-     *
-     * @return string The rendered settings HTML
-     */
-    protected function settingsHtml(): ?string
+    public function getSettingsResponse(): Response
     {
-        $allAdapterTypes = self::getAdaptersTypes();
-        $allAdapters = [];
-        $adapterTypeOptions = [];
-        $adapter = null;
-
-        if (Craft::$app->request->post('settings')) {
-            $postSettings = Craft::$app->request->post('settings');
-            $adapterSettings = $postSettings['adapterSettings'][$postSettings['adapterType']] ?? [];
-            $adapter = self::createAdapter($postSettings['adapterType'], $adapterSettings);
-            $adapter->validate();
+        // check if a configuration file may override Control Panel settings
+        $configService = Craft::$app->getConfig();
+        $config = $configService->getConfigFromFile('newsletter');
+        if (!empty($config)) {
+            $configPath = $configService->getConfigFilePath('newsletter');
         }
 
-        if (!$adapter instanceof \craft\base\ComponentInterface) {
-            $adapter = $this->adapter;
-        }
+        $sites = Craft::$app->getSites()->getEditableSites();
+
+        /** @var Controller $controller */
+        $controller = Craft::$app->controller;
 
         // Create every available adapter
-        foreach ($allAdapterTypes as $adapterType) {
+        $allAdapters = [];
+        $adapterTypeOptions = [];
+        foreach (self::getAdaptersTypes() as $adapterType) {
             /** @var string|NewsletterAdapterInterface $adapterType */
-            $allAdapters[] = self::createAdapter($adapterType);
+            $allAdapters[] = $this->newsletterAdapterService->createAdapter($adapterType);
             $adapterTypeOptions[] = [
                 'value' => $adapterType,
                 'label' => $adapterType::displayName(),
@@ -272,22 +246,40 @@ class Newsletter extends Plugin
         // Sort them by name
         ArrayHelper::multisort($adapterTypeOptions, 'label');
 
-        // check if a configuration file may override Control Panel settings
-        $configService = Craft::$app->getConfig();
-        $config = $configService->getConfigFromFile('newsletter');
-        if (!empty($config)) {
-            $configPath = $configService->getConfigFilePath('newsletter');
-        }
+        return $controller->renderTemplate('newsletter/_layouts/settings.twig', [
+            // for _layout/settings.twig
+            'plugin' => $this,
+            'configPath' => $configPath ?? null,
+            'sites' => $sites,
+            'tabs' => ArrayHelper::map($sites, 'handle', static fn($site) => [
+                'url'   => "#$site->handle",
+                'label' => $site->name,
+            ]),
 
-        return Craft::$app->view->renderTemplate(
-            'newsletter/settings',
-            [
-                'settings' => $this->getSettings(),
-                'allAdapters' => $allAdapters,
-                'adapterTypeOptions' => $adapterTypeOptions,
-                'adapter' => $adapter,
-                'configPath' => $configPath ?? null,
-            ]
-        );
+            // for site-settings.twig
+            'settings' => $this->getSettings(),
+            'allAdapters' => $allAdapters,
+            'adapterTypeOptions' => $adapterTypeOptions,
+        ]);
+    }
+
+    public function getCurrentSiteSettings(): ?Settings
+    {
+        $currentSiteHandle = Craft::$app->getSites()->getCurrentSite()->handle;
+
+        return $this->getSettings()->getSiteSettings($currentSiteHandle);
+
+    }
+
+    public function getNewsletterAdapterForSite(string $siteHandle): NewsletterAdapterInterface
+    {
+        return $this->newsletterAdapterService->getNewsletterAdapterForSite($siteHandle);
+    }
+
+    private function _registerVariables(): void
+    {
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $e) {
+            $e->sender->set('newsletter', NewsletterVariable::class);
+        });
     }
 }

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add the ability to define per-site settings
+
 ### Fixed
 
 - fix a bug in the Brevo adpater additional fields implementation that prevented subscriptions
