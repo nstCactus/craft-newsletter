@@ -1,5 +1,12 @@
 # Release Notes for Newsletter
 
+## Unreleased
+
+### Fixed
+
+- fix a bug in the Brevo adpater additional fields implementation that prevented subscriptions
+
+
 ## 3.0.0 - 2024-02-11
 
 ### Changed

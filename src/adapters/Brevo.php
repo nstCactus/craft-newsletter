@@ -148,7 +148,7 @@ class Brevo extends BaseNewsletterAdapter
             if (App::parseBooleanEnv($this->doi)) {
                 $contact = new CreateDoiContact([
                     'email' => $email,
-                    'attributes' => $attributes,
+                    'attributes' => (object)$attributes,
                     'includeListIds' => [$listId],
                     'templateId' => (int)App::parseEnv($this->doiTemplateId),
                     'redirectionUrl' => App::parseEnv($this->doiRedirectionUrl),
@@ -157,7 +157,7 @@ class Brevo extends BaseNewsletterAdapter
             } else {
                 $contact = new CreateContact([
                     'email' => $email,
-                    'attributes' => $attributes,
+                    'attributes' => (object)$attributes,
                     'listIds' => [$listId],
                 ]);
                 $clientContactApi->createContact($contact);
@@ -173,7 +173,7 @@ class Brevo extends BaseNewsletterAdapter
     private function _registerContact(string $email, ContactsApi $clientContactApi, array $attributes = null): bool
     {
         try {
-            $contact = new CreateContact(['email' => $email, 'attributes' => $attributes]);
+            $contact = new CreateContact(['email' => $email, 'attributes' => (object)$attributes]);
             $clientContactApi->createContact($contact);
             return true;
         } catch (ApiException $apiException) {
@@ -185,7 +185,7 @@ class Brevo extends BaseNewsletterAdapter
     private function _addContactToList(string $email, int $listId, ContactsApi $clientContactApi, array $attributes = null): bool
     {
         try {
-            $contact = new UpdateContact(['listIds' => [$listId], 'attributes' => $attributes]);
+            $contact = new UpdateContact(['listIds' => [$listId], 'attributes' => (object)$attributes]);
             $clientContactApi->updateContact($email, $contact);
             return true;
         } catch (ApiException $apiException) {
