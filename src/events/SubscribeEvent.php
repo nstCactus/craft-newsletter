@@ -7,5 +7,6 @@ use craft\events\ModelEvent;
 class SubscribeEvent extends ModelEvent
 {
     public bool $isSpam = false;
+
     public bool $isNew = true;
 }

@@ -116,8 +116,6 @@ class NewsletterTest extends BaseUnitTest
 
     protected function _before()
     {
-        parent::_before();
-
         $this->tester->mockMethods(
             Newsletter::$plugin,
             'adapter',

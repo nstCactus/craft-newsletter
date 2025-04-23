@@ -41,6 +41,7 @@ class LocalizedSettingsCollection extends Model
                     $this->localizedSettings[$siteHandle] = $siteSettings;
                 }
             }
+
             return;
         }
 
@@ -63,7 +64,7 @@ class LocalizedSettingsCollection extends Model
         return $this->localizedSettings[$siteHandle] ?? new Settings();
     }
 
-    public function defineRules(): array
+    protected function defineRules(): array
     {
         return [
             ['localizedSettings', 'validateEach'],

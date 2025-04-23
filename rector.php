@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
+use Rector\CodingStyle\Rector\Encapsed\WrapEncapsedVariableInCurlyBracesRector;
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\SetList;
 
@@ -16,7 +18,8 @@ return RectorConfig::configure()
             __DIR__ . '/tests/_output',
             __DIR__ . '/tests/_support',
             __DIR__ . '/src/translations',
-
+            EncapsedStringsToSprintfRector::class,
+            WrapEncapsedVariableInCurlyBracesRector::class,
         ]
     )
     ->withPhpSets(php80: true)
