@@ -7,7 +7,7 @@ use craft\base\Model;
 
 class LocalizedSettingsCollection extends Model
 {
-    /** @var array<string, Settings> */
+    /** @var array<string, Settings|array> */
     public array $localizedSettings = [];
 
     /**
