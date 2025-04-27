@@ -9,22 +9,32 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use MailchimpMarketing\Api\ListsApi;
 use MailchimpMarketing\ApiClient;
+use Throwable;
+use yii\base\Behavior;
 use yii\helpers\Json;
 use yii\helpers\VarDumper;
 
+/**
+ * @phpstan-type AdditionalFieldsType array<string, mixed>
+ * @property-read null|string $subscriptionError
+ * @property-read null|string $settingsHtml
+ * @property ListsApi $listApi
+ * @property ApiClient $apiClient
+ * @property ?ApiClient $client
+ */
 class Mailchimp extends BaseNewsletterAdapter
 {
-    public $apiKey;
+    public ?string $apiKey = null;
 
-    public $serverPrefix;
+    public ?string $serverPrefix = null;
 
-    public $listId;
+    public ?string $listId = null;
 
-    private $_errorMessage;
+    private ?string $_errorMessage = null;
 
-    private $_client;
+    private ?ApiClient $_client = null;
 
-    private $_listApi;
+    private ?ListsApi $_listApi = null;
 
     /**
      * @inheritdoc
@@ -36,6 +46,7 @@ class Mailchimp extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, array{class: class-string}|class-string|Behavior>
      */
     public function behaviors(): array
     {
@@ -53,6 +64,7 @@ class Mailchimp extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @throws Throwable If rendering the template fails
      */
     public function getSettingsHtml(): ?string
     {
@@ -95,11 +107,17 @@ class Mailchimp extends BaseNewsletterAdapter
         return $this->_listApi;
     }
 
+    /**
+     * @noinspection PhpUnused Called by Yii when setting the virtual property $this->listApi
+     */
     public function setListApi(ListsApi $listsApi): void
     {
         $this->_listApi = $listsApi;
     }
 
+    /**
+     * @param AdditionalFieldsType $additionalFields
+     */
     private function _registerContact(
         string $email,
         ListsApi $listsApi,
@@ -117,11 +135,11 @@ class Mailchimp extends BaseNewsletterAdapter
 
             return true;
         } catch (ClientException $clientException) {
-            $response = Json::decode($clientException->getResponse()->getBody()->getContents(), true);
+            $response = Json::decode($clientException->getResponse()->getBody()->getContents());
             $status = $response['status'] ?? 400;
             $title = $response['title'] ?? '';
             if ($status === 400 && $title === 'Forgotten Email Not Subscribed') {
-                // Contact was permanently deleted from list,
+                // Contact was permanently deleted from the list,
                 // consider him as already subscribed to prevent email enumeration
                 return true;
             }
@@ -183,6 +201,9 @@ class Mailchimp extends BaseNewsletterAdapter
         return $errorMessage;
     }
 
+    /**
+     * @noinspection PhpUnused Called by Yii when setting the virtual property $this->client
+     */
     public function setApiClient(ApiClient $client): void
     {
         $this->_client = $client;
@@ -195,6 +216,8 @@ class Mailchimp extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
      */
     protected function defineRules(): array
     {

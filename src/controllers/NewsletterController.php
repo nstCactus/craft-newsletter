@@ -4,7 +4,7 @@ namespace juban\newsletter\controllers;
 
 use craft\web\Controller;
 use juban\newsletter\models\NewsletterForm;
-use yii\web\BadRequestHttpException;
+use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
 class NewsletterController extends Controller
@@ -13,7 +13,7 @@ class NewsletterController extends Controller
 
     /**
      * @return Response|null
-     * @throws BadRequestHttpException
+     * @throws MethodNotAllowedHttpException
      */
     public function actionSubscribe(): ?Response
     {
@@ -40,7 +40,6 @@ class NewsletterController extends Controller
         // Subscribe was successful
         return $this->asModelSuccess(
             $newsletterForm,
-            null,
             data: [
                 'success' => true,
             ]

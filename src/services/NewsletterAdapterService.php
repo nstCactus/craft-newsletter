@@ -6,10 +6,15 @@ use craft\base\Component;
 use craft\helpers\Component as ComponentHelper;
 use juban\newsletter\adapters\NewsletterAdapterInterface;
 use juban\newsletter\Newsletter;
+use Throwable;
 
 class NewsletterAdapterService extends Component
 {
-    public function createAdapter(string $type, array $settings = null): NewsletterAdapterInterface
+    /**
+     * @param ?array<string, mixed> $settings
+     * @throws Throwable If creating the adapter instance fails.
+     */
+    public function createAdapter(string $type, ?array $settings = null): NewsletterAdapterInterface
     {
         return ComponentHelper::createComponent([
             'type' => $type,
@@ -17,6 +22,9 @@ class NewsletterAdapterService extends Component
         ], NewsletterAdapterInterface::class);
     }
 
+    /**
+     * @throws Throwable If creating the adapter instance fails.
+     */
     public function getNewsletterAdapterForSite(string $siteHandle): NewsletterAdapterInterface
     {
         $settings = Newsletter::$plugin->getSettings()->getSiteSettings($siteHandle);

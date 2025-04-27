@@ -8,19 +8,27 @@ use craft\helpers\App;
 use Mailjet\Client;
 use Mailjet\Resources;
 use Mailjet\Response;
+use Throwable;
+use yii\base\Behavior;
 use yii\helpers\VarDumper;
 
+/**
+ *
+ * @property-read Client $client
+ * @property-read ?string $settingsHtml
+ * @property-read ?string $subscriptionError
+ */
 class Mailjet extends BaseNewsletterAdapter
 {
-    public $apiKey;
+    public ?string $apiKey = null;
 
-    public $apiSecret;
+    public ?string $apiSecret = null;
 
-    public $listId;
+    public ?string $listId = null;
 
-    private $_client;
+    private ?Client $_client = null;
 
-    private $_errorMessage;
+    private ?string $_errorMessage = null;
 
     /**
      * @inheritdoc
@@ -32,6 +40,7 @@ class Mailjet extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, array{class: class-string}|class-string|Behavior>
      */
     public function behaviors(): array
     {
@@ -49,6 +58,7 @@ class Mailjet extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, string>
      */
     public function attributeLabels(): array
     {
@@ -61,6 +71,7 @@ class Mailjet extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @throws Throwable If rendering the template fails
      */
     public function getSettingsHtml(): ?string
     {
@@ -112,9 +123,6 @@ class Mailjet extends BaseNewsletterAdapter
         return $this->_client;
     }
 
-    /**
-     * @return int|null
-     */
     private function _getContactId(Client $client, string $email): ?int
     {
         $response = $client->get(Resources::$Contact, ['id' => $email]);
@@ -125,9 +133,6 @@ class Mailjet extends BaseNewsletterAdapter
         return null;
     }
 
-    /**
-     * @return int|null
-     */
     private function _registerContact(Client $client, string $email): ?int
     {
         $body = [
@@ -144,9 +149,6 @@ class Mailjet extends BaseNewsletterAdapter
         return $response->getData()[0]['ID'] ?? null;
     }
 
-    /**
-     * @return string
-     */
     private function _getErrorMessageFromRessource(Response $response): string
     {
         $errorLogMessages = [
@@ -181,13 +183,15 @@ class Mailjet extends BaseNewsletterAdapter
     }
 
     /**
-     * @return bool
+     * @param array<string, mixed> $data
      */
     private function _updateContactData(Client $client, int $contactId, array $data): bool
     {
-        $body = array_map(static fn($key, $value) => ['Name' => $key, 'Value' => $value],
+        $body = array_map(
+            static fn($key, $value) => ['Name' => $key, 'Value' => $value],
             array_keys($data),
-            array_values($data));
+            array_values($data)
+        );
         $response = $client->put(Resources::$Contactdata, ['id' => $contactId, 'body' => ['Data' => $body]]);
         if (!$response->success()) {
             $this->_errorMessage = $this->_getErrorMessageFromRessource($response);
@@ -196,9 +200,6 @@ class Mailjet extends BaseNewsletterAdapter
         return $response->success();
     }
 
-    /**
-     * @return bool
-     */
     private function _subscribeContactToList(Client $client, string $email): bool
     {
         // Register contact to list
@@ -228,6 +229,8 @@ class Mailjet extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
      */
     protected function defineRules(): array
     {

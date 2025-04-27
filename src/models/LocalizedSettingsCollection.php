@@ -4,14 +4,20 @@ namespace juban\newsletter\models;
 
 use Craft;
 use craft\base\Model;
+use InvalidArgumentException;
 
+/**
+ * @property-write array $attributesFromNonLocalizedSettings
+ */
 class LocalizedSettingsCollection extends Model
 {
-    /** @var array<string, Settings|array> */
+    /** @var array<string, Settings|array<string, mixed>> */
     public array $localizedSettings = [];
 
     /**
      * Override setAttributes to capture dynamic site settings
+     * @inheritdoc
+     * @param array<string, mixed> $values
      */
     public function setAttributes($values, $safeOnly = true): void
     {
@@ -20,7 +26,7 @@ class LocalizedSettingsCollection extends Model
 
             foreach ($values['localizedSettings'] as $siteHandle => $settingsArray) {
                 if (!Craft::$app->getSites()->getSiteByHandle($siteHandle)) {
-                    throw new \InvalidArgumentException("Site \"$siteHandle\" does not exist.");
+                    throw new InvalidArgumentException("Site \"$siteHandle\" does not exist.");
                 }
 
                 if (array_key_exists('adapterTypeSettings', $settingsArray)) {
@@ -52,6 +58,9 @@ class LocalizedSettingsCollection extends Model
         }
     }
 
+    /**
+     * @param array<string, mixed> $values
+     */
     private function setAttributesFromNonLocalizedSettings(array $values): void
     {
         foreach (Craft::$app->getSites()->getAllSites() as $site) {
@@ -64,6 +73,11 @@ class LocalizedSettingsCollection extends Model
         return $this->localizedSettings[$siteHandle] ?? new Settings();
     }
 
+    /**
+     * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
+     */
     protected function defineRules(): array
     {
         return [
@@ -71,7 +85,8 @@ class LocalizedSettingsCollection extends Model
         ];
     }
 
-    public function validateEach($attribute): void
+    /** @noinspection PhpUnused Used to validate the localizedSettings Yii attribute */
+    public function validateEach(string $attribute): void
     {
         foreach ($this->$attribute as $siteHandle => $settingsModel) {
             if (!$settingsModel->validate()) {

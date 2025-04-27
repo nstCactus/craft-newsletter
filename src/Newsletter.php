@@ -83,7 +83,7 @@ class Newsletter extends Plugin
     /**
      * Initializes the plugin.
      */
-    public function init()
+    public function init(): void
     {
         parent::init();
         self::$plugin = $this;

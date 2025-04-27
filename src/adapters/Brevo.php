@@ -13,29 +13,31 @@ use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
 use GuzzleHttp\Client;
+use Throwable;
+use yii\base\Behavior;
 use yii\helpers\VarDumper;
 
 /**
- *
- * @property-read ContactsApi $clientContactApi
- * @property-read mixed $settingsHtml
- * @property-read null|string $subscriptionError
+ * @property ContactsApi $clientContactApi
+ * @property-read ?string $settingsHtml
+ * @property-read ?string $subscriptionError
+ * @phpstan-type attributesType array<string, mixed>
  */
 class Brevo extends BaseNewsletterAdapter
 {
-    public $apiKey;
+    public ?string $apiKey = null;
 
-    public $listId;
+    public ?string $listId = null;
 
-    public $doi = false;
+    public bool $doi = false;
 
-    public $doiTemplateId;
+    public ?string $doiTemplateId = null;
 
-    public $doiRedirectionUrl;
+    public ?string $doiRedirectionUrl = null;
 
-    private $_errorMessage;
+    private ?string $_errorMessage = null;
 
-    private $_contactsApi;
+    private ?ContactsApi $_contactsApi = null;
 
     /**
      * @inheritdoc
@@ -47,6 +49,7 @@ class Brevo extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, array{class: class-string}|class-string|Behavior>
      */
     public function behaviors(): array
     {
@@ -66,6 +69,7 @@ class Brevo extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, string>
      */
     public function attributeLabels(): array
     {
@@ -80,6 +84,7 @@ class Brevo extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @throws Throwable If rendering the template fails
      */
     public function getSettingsHtml(): ?string
     {
@@ -88,6 +93,9 @@ class Brevo extends BaseNewsletterAdapter
         ]);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function subscribe(string $email, array $additionalFields = null): bool
     {
         $clientContactApi = $this->getClientContactApi();
@@ -122,6 +130,9 @@ class Brevo extends BaseNewsletterAdapter
         return $this->_contactsApi;
     }
 
+    /**
+     * @noinspection PhpUnused Called by Yii when setting the virtual property $this->client
+     */
     public function setClientContactApi(ContactsApi $contactsApi): void
     {
         $this->_contactsApi = $contactsApi;
@@ -138,6 +149,9 @@ class Brevo extends BaseNewsletterAdapter
         }
     }
 
+    /**
+     * @param attributesType $attributes
+     */
     private function _registerContactToList(
         string $email,
         int $listId,
@@ -170,6 +184,9 @@ class Brevo extends BaseNewsletterAdapter
         }
     }
 
+    /**
+     * @param attributesType $attributes
+     */
     private function _registerContact(string $email, ContactsApi $clientContactApi, array $attributes = null): bool
     {
         try {
@@ -182,6 +199,9 @@ class Brevo extends BaseNewsletterAdapter
         }
     }
 
+    /**
+     * @param attributesType $attributes
+     */
     private function _addContactToList(string $email, int $listId, ContactsApi $clientContactApi, array $attributes = null): bool
     {
         try {
@@ -223,6 +243,8 @@ class Brevo extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
      */
     protected function defineRules(): array
     {

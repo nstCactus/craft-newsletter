@@ -3,15 +3,19 @@
 namespace juban\newsletter\adapters;
 
 use Craft;
+use Throwable;
 
 /**
- * Dummy class
+ * Dummy adapter
  * This class is intended as a base for concret adapters
  *
+ * @property-read ?string $settingsHtml
+ * @property-read string $subscriptionError
  */
 class Dummy extends BaseNewsletterAdapter
 {
-    public $someAttribute;
+    /** @noinspection PhpUnused */
+    public mixed $someAttribute = null;
 
     /**
      * @inheritdoc
@@ -23,6 +27,7 @@ class Dummy extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<string, string>
      */
     public function attributeLabels(): array
     {
@@ -33,6 +38,7 @@ class Dummy extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @throws Throwable If rendering the template fails
      */
     public function getSettingsHtml(): ?string
     {
@@ -41,18 +47,11 @@ class Dummy extends BaseNewsletterAdapter
         ]);
     }
 
-    /**
-     * @param string $email
-     * @return bool
-     */
     public function subscribe(string $email, array $additionalFields = null): bool
     {
         return true;
     }
 
-    /**
-     * @return string
-     */
     public function getSubscriptionError(): string
     {
         return "Some error";
@@ -60,6 +59,8 @@ class Dummy extends BaseNewsletterAdapter
 
     /**
      * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
      */
     protected function defineRules(): array
     {

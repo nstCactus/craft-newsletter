@@ -8,14 +8,12 @@ interface NewsletterAdapterInterface extends ConfigurableComponentInterface
 {
     /**
      * Try to subscribe the given email into the newsletter mailing list service
-     * @param array|null $additionalFields
-     * @return bool
+     * @param array<string, mixed>|null $additionalFields
      */
-    public function subscribe(string $email, array $additionalFields = null);
+    public function subscribe(string $email, array $additionalFields = null): bool;
 
     /**
      * Return the latest error message after a call to the subscribe method
-     * @return null|string
      */
-    public function getSubscriptionError();
+    public function getSubscriptionError(): ?string;
 }

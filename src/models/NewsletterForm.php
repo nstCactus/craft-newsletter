@@ -9,14 +9,20 @@ use juban\newsletter\events\SubscribeEvent;
 
 class NewsletterForm extends Model
 {
-    public $email;
+    public ?string $email = null;
 
-    public $consent;
+    public bool $consent = false;
 
-    public $additionalFields;
+    /** @var array<string, mixed> */
+    public array $additionalFields = [];
 
     public const EVENT_BEFORE_SUBSCRIBE = 'beforeSubscribe';
 
+    /**
+     * @inheritdoc
+     * @return array<mixed>
+     * @noinspection PhpPluralMixedCanBeReplacedWithArrayInspection Yii rules are too polymorphic to be described easily
+     */
     public function rules(): array
     {
         return [
@@ -43,9 +49,9 @@ class NewsletterForm extends Model
         }
 
         // Use newsletter module to register new user
-        $newsletterAdapater = Newsletter::$plugin->adapter;
-        if (!$newsletterAdapater->subscribe($this->email, $this->additionalFields)) {
-            $this->addError('email', $newsletterAdapater->getSubscriptionError());
+        $newsletterAdapter = Newsletter::$plugin->adapter;
+        if (!$newsletterAdapter->subscribe($this->email, $this->additionalFields)) {
+            $this->addError('email', $newsletterAdapter->getSubscriptionError());
             return false;
         }
 
