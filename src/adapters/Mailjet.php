@@ -188,7 +188,7 @@ class Mailjet extends BaseNewsletterAdapter
     private function _updateContactData(Client $client, int $contactId, array $data): bool
     {
         $body = array_map(
-            static fn($key, $value) => ['Name' => $key, 'Value' => $value],
+            static fn($key, $value): array => ['Name' => $key, 'Value' => $value],
             array_keys($data),
             array_values($data)
         );

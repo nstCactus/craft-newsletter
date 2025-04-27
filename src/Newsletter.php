@@ -98,10 +98,12 @@ class Newsletter extends Plugin
         $this->set('newsletterAdapterService', NewsletterAdapterService::class);
         // Register adapter component
         // TODO: rename to currentSiteNewsletterAdapter
-        $this->set('adapter', function() {
-            $currentSite = Craft::$app->getSites()->getCurrentSite();
-            return $this->getNewsletterAdapterForSite($currentSite->handle);
-        });
+        $this->set(
+            'adapter',
+            fn(): NewsletterAdapterInterface => $this->getNewsletterAdapterForSite(
+                Craft::$app->getSites()->getCurrentSite()->handle,
+            ),
+        );
 
         Craft::info(
             Craft::t(
@@ -122,7 +124,7 @@ class Newsletter extends Plugin
         Event::on(
             Plugins::class,
             Plugins::EVENT_AFTER_INSTALL_PLUGIN,
-            function(PluginEvent $event) {
+            function(PluginEvent $event): void {
                 if ($event->plugin !== $this) {
                     return;
                 }
@@ -157,7 +159,7 @@ class Newsletter extends Plugin
         Event::on(
             NewsletterForm::class,
             NewsletterForm::EVENT_AFTER_VALIDATE,
-            static function(Event $event) {
+            static function(Event $event): void {
                 $form = $event->sender;
                 if (!GoogleRecaptcha::$plugin->recaptcha->verify()) {
                     $form->addError('recaptcha', Craft::t('newsletter', 'Please prove you are not a robot.'));
@@ -246,7 +248,7 @@ class Newsletter extends Plugin
             'plugin' => $this,
             'configPath' => $configPath ?? null,
             'sites' => $sites,
-            'tabs' => ArrayHelper::map($sites, 'handle', static fn($site) => [
+            'tabs' => ArrayHelper::map($sites, 'handle', static fn($site): array => [
                 'url'   => "#$site->handle",
                 'label' => $site->name,
             ]),
@@ -273,7 +275,7 @@ class Newsletter extends Plugin
 
     private function _registerVariables(): void
     {
-        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $e) {
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $e): void {
             $e->sender->set('newsletter', NewsletterVariable::class);
         });
     }

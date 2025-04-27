@@ -26,5 +26,6 @@ return RectorConfig::configure()
     ->withSets([
         SetList::CODE_QUALITY,
         SetList::CODING_STYLE,
-        SetList::EARLY_RETURN
+        SetList::EARLY_RETURN,
+        SetList::TYPE_DECLARATION,
     ]);

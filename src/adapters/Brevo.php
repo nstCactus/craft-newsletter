@@ -118,7 +118,7 @@ class Brevo extends BaseNewsletterAdapter
 
     public function getClientContactApi(): ContactsApi
     {
-        if (!$this->_contactsApi) {
+        if (!$this->_contactsApi instanceof ContactsApi) {
             $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', App::parseEnv($this->apiKey));
 
             $this->_contactsApi = new ContactsApi(
