@@ -7,11 +7,6 @@ use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 use juban\newsletter\adapters\NewsletterAdapterInterface;
 
-/**
- * NewsletterSettings class
- *
- * @author juban
- **/
 class Settings extends Model
 {
     public $adapterType;

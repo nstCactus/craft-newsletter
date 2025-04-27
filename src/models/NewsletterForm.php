@@ -7,11 +7,6 @@ use craft\base\Model;
 use juban\newsletter\Newsletter;
 use juban\newsletter\events\SubscribeEvent;
 
-/**
- * NewsletterForm class
- *
- * @author juban
- **/
 class NewsletterForm extends Model
 {
     public $email;

@@ -8,8 +8,7 @@ use Craft;
  * Dummy class
  * This class is intended as a base for concret adapters
  *
- * @author juban
- **/
+ */
 class Dummy extends BaseNewsletterAdapter
 {
     public $someAttribute;

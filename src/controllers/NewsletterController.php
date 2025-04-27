@@ -7,11 +7,6 @@ use juban\newsletter\models\NewsletterForm;
 use yii\web\BadRequestHttpException;
 use yii\web\Response;
 
-/**
- * NewsletterController class
- *
- * @author juban
- **/
 class NewsletterController extends Controller
 {
     protected array|int|bool $allowAnonymous = true;

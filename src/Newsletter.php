@@ -38,11 +38,6 @@ use yii\web\Response;
  *
  * @property NewsletterAdapterInterface $adapter
  * @property NewsletterAdapterService $newsletterAdapterService
- *
- * @author    juban
- * @package   Newsletter
- * @since     1.0.0
- *
  * @property  LocalizedSettingsCollection $settings
  * @method    LocalizedSettingsCollection getSettings()
  */

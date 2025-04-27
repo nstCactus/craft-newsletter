@@ -10,11 +10,6 @@ use Mailjet\Resources;
 use Mailjet\Response;
 use yii\helpers\VarDumper;
 
-/**
- * Mailjet class
- *
- * @author juban
- **/
 class Mailjet extends BaseNewsletterAdapter
 {
     public $apiKey;
