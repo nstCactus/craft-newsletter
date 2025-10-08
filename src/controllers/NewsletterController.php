@@ -22,8 +22,8 @@ class NewsletterController extends Controller
         // form validation
         $newsletterForm = new NewsletterForm();
         $newsletterForm->email = $this->request->post('email');
-        $newsletterForm->consent = $this->request->post('consent');
-        $newsletterForm->additionalFields = $this->request->post('additionalFields');
+        $newsletterForm->consent = $this->request->post('consent', false);
+        $newsletterForm->additionalFields = $this->request->post('additionalFields', []);
 
         // Subscribe failed, send the form back
         if (!$newsletterForm->subscribe()) {
