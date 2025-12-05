@@ -2,7 +2,7 @@
     "name": "jub/craft-newsletter",
     "description": "Craft CMS Newsletter plugin",
     "type": "craft-plugin",
-    "version": "3.0.0",
+    "version": "4.0.x-dev",
     "keywords": [
         "craft",
         "cms",
@@ -23,21 +23,22 @@
     ],
     "require": {
         "php": "^8.0.2",
-        "craftcms/cms": "^4.0",
+        "craftcms/cms": "^4.0|^5.0",
         "mailjet/mailjet-apiv3-php": "^1.5",
         "mailchimp/marketing": "^3.0",
         "getbrevo/brevo-php": "^1.0"
     },
     "require-dev": {
-        "codeception/codeception": "^4.0.0",
-        "vlucas/phpdotenv": "^3.0",
-        "codeception/module-yii2": "^1.0.0",
-        "codeception/module-asserts": "^1.0.0",
-        "codeception/module-db": "^1.1",
+        "codeception/codeception": "^5.0.0",
+        "vlucas/phpdotenv": "^5.6.1",
+        "codeception/module-yii2": "^2.0.3",
+        "codeception/module-asserts": "^3.0.0",
+        "codeception/module-db": "^3.2.2",
         "craftcms/ecs": "dev-main",
         "craftcms/phpstan": "dev-main",
-        "jub/craft-google-recaptcha": "^2.1",
-        "rector/rector": "^1.0"
+        "jub/craft-google-recaptcha": "^3.0.0",
+        "rector/rector": "^1.0.0",
+        "craftcms/rector": "dev-main"
     },
     "autoload": {
         "psr-4": {
